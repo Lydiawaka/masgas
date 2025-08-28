@@ -1,9 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { updateProduct, deleteProduct } from "@/lib/database"
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const id = Number.parseInt(params.id)
+    const { id: idParam } = await params
+    const id = Number.parseInt(idParam)
     const body = await request.json()
 
     const product = await updateProduct(id, body)
@@ -19,9 +20,10 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const id = Number.parseInt(params.id)
+    const { id: idParam } = await params
+    const id = Number.parseInt(idParam)
     const success = await deleteProduct(id)
 
     if (!success) {
