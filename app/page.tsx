@@ -63,7 +63,121 @@ interface Order {
   date: string
 }
 
-const MasgasDashboard: React.FC = () => {
+type NewProductState = {
+  name: string
+  category: string
+  price: string
+  stock: string
+  description: string
+  image_url: string
+}
+
+// --- AddProductModal (moved out so it won't remount on every ProductsTab render) ---
+interface AddProductModalProps {
+  show: boolean
+  onClose: () => void
+  newProduct: NewProductState
+  setNewProduct: React.Dispatch<React.SetStateAction<NewProductState>>
+  handleAddProduct: () => Promise<void> | void
+  loading: boolean
+  handleImageUpload: (url: string) => void
+}
+
+function AddProductModal({ show, onClose, newProduct, setNewProduct, handleAddProduct, loading, handleImageUpload }: AddProductModalProps) {
+  if (!show) return null
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+      <div className="bg-white rounded-xl p-4 sm:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Add New Product</h3>
+        <div className="space-y-4">
+          <ImageUpload onImageUpload={handleImageUpload} currentImage={newProduct.image_url} />
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
+            <input
+              value={newProduct.name}
+              onChange={(e) => setNewProduct((s) => ({ ...s, name: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              placeholder="Enter product name"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+            <select
+              value={newProduct.category}
+              onChange={(e) => setNewProduct((s) => ({ ...s, category: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+            >
+              <option value="">Select category</option>
+              <option>Submersible Pumping</option>
+              <option>EV Systems</option>
+              <option>Car Wash Monitoring</option>
+              <option>Integrated Electrical Controls</option>
+              <option>Fuel Management Systems</option>
+              <option>Piping & Containment</option>
+              <option>Wire Management</option>
+              <option>Service Station Hardware</option>
+              <option>Dispensing</option>
+              <option>Transport</option>
+              <option>System Solutions</option>
+              <option>Corrosion Control</option>
+              <option>Special Offers</option>
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
+              <input
+                type="number"
+                step="0.01"
+                value={newProduct.price}
+                onChange={(e) => setNewProduct((s) => ({ ...s, price: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                placeholder="0.00"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Stock</label>
+              <input
+                type="number"
+                value={newProduct.stock}
+                onChange={(e) => setNewProduct((s) => ({ ...s, stock: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                placeholder="0"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <textarea
+              value={newProduct.description}
+              onChange={(e) => setNewProduct((s) => ({ ...s, description: e.target.value }))}
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              placeholder="Enter product description"
+            />
+          </div>
+
+          <div className="flex justify-end space-x-3 mt-3">
+            <button onClick={onClose} className="px-4 py-2 border border-gray-300 rounded-lg">
+              Cancel
+            </button>
+            <button onClick={handleAddProduct} disabled={loading} className="px-4 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-50">
+              {loading ? "Adding..." : "Add Product"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// --- Main Dashboard Component ---
+export default function MasgasDashboard()  {
   const [auth, setAuth] = useState<AuthState>({ isAuthenticated: false, user: null })
   const [activeTab, setActiveTab] = useState<string>("overview")
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false)
@@ -74,7 +188,7 @@ const MasgasDashboard: React.FC = () => {
     { id: "ORD-003", customer: "Mike Davis", items: 2, total: 3748, status: "delivered", date: "2025-01-06" },
   ])
 
-  const [newProduct, setNewProduct] = useState({ name: "", category: "", price: "", stock: "", description: "", image_url: "" })
+  const [newProduct, setNewProduct] = useState<NewProductState>({ name: "", category: "", price: "", stock: "", description: "", image_url: "" })
   const [showAddProduct, setShowAddProduct] = useState<boolean>(false)
   const [loading, setLoading] = useState<boolean>(false)
   const [searchTerm, setSearchTerm] = useState<string>("")
@@ -455,65 +569,9 @@ const MasgasDashboard: React.FC = () => {
               ))
             )}
           </div>
+
+          {/* Note: modal removed from here — it's rendered once below to avoid remounting on every change */}
         </div>
-
-        {/* Add Product Modal */}
-        {showAddProduct && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-            <div className="bg-white rounded-xl p-4 sm:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Add New Product</h3>
-              <div className="space-y-4">
-                <ImageUpload onImageUpload={handleImageUpload} currentImage={newProduct.image_url} />
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
-                  <input value={newProduct.name} onChange={(e) => setNewProduct((s) => ({ ...s, name: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Enter product name" />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                  <select value={newProduct.category} onChange={(e) => setNewProduct((s) => ({ ...s, category: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                    <option value="">Select category</option>
-                    <option>Submersible Pumping</option>
-                    <option>EV Systems</option>
-                    <option>Car Wash Monitoring</option>
-                    <option>Integrated Electrical Controls</option>
-                    <option>Fuel Management Systems</option>
-                    <option>Piping & Containment</option>
-                    <option>Wire Management</option>
-                    <option>Service Station Hardware</option>
-                    <option>Dispensing</option>
-                    <option>Transport</option>
-                    <option>System Solutions</option>
-                    <option>Corrosion Control</option>
-                    <option>Special Offers</option>
-                  </select>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
-                    <input type="number" step="0.01" value={newProduct.price} onChange={(e) => setNewProduct((s) => ({ ...s, price: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="0.00" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Stock</label>
-                    <input type="number" value={newProduct.stock} onChange={(e) => setNewProduct((s) => ({ ...s, stock: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="0" />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                  <textarea value={newProduct.description} onChange={(e) => setNewProduct((s) => ({ ...s, description: e.target.value }))} rows={3} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Enter product description" />
-                </div>
-
-                <div className="flex justify-end space-x-3 mt-3">
-                  <button onClick={() => setShowAddProduct(false)} className="px-4 py-2 border border-gray-300 rounded-lg">Cancel</button>
-                  <button onClick={handleAddProduct} disabled={loading} className="px-4 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-50">{loading ? "Adding..." : "Add Product"}</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     )
   }
@@ -660,8 +718,19 @@ const MasgasDashboard: React.FC = () => {
 
         <main className="flex-1 overflow-auto p-4 sm:p-6">{renderContent()}</main>
       </div>
+
+      {/* Add Product Modal moved outside ProductsTab to prevent focus loss */}
+      <AddProductModal
+        show={showAddProduct}
+        onClose={() => setShowAddProduct(false)}
+        newProduct={newProduct}
+        setNewProduct={setNewProduct}
+        handleAddProduct={handleAddProduct}
+        loading={loading}
+        handleImageUpload={handleImageUpload}
+      />
     </div>
   )
 }
 
-export default MasgasDashboard
+ 
